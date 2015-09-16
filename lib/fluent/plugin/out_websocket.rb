@@ -25,6 +25,9 @@ module Fluent
     config_param :use_msgpack, :bool, :default => false
     config_param :host, :string, :default => "0.0.0.0"
     config_param :port, :integer, :default => 8080
+    config_param :secure, :bool, :default => false
+    config_param :ssl_key, :string
+    config_param :ssl_cert, :string
     config_param :add_time, :bool, :default => false
     config_param :add_tag, :bool, :default => true
 
@@ -34,7 +37,7 @@ module Fluent
       $log.trace "Started em-websocket thread."
       $log.info "WebSocket server #{@host}:#{@port} [msgpack: #{@use_msgpack}]"
       EM.run {
-        EM::WebSocket.run(:host => @host, :port => @port) do |ws|
+        EM::WebSocket.run(:host => @host, :port => @port, :secure => @secure, tls_options: { private_key_file: @ssl_key, cert_chain_file: @ssl_cert } ) do |ws|
           ws.onopen { |handshake|
             callback = @use_msgpack ? proc{|msg| ws.send_binary(msg)} : proc{|msg| ws.send(msg)}
             $lock.synchronize do
